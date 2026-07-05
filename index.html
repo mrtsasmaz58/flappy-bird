@@ -1304,6 +1304,7 @@
   let pauseResumeRect = null, pauseMenuRect = null, pauseEndRect = null;
   let menuScreen = "home";          // "home" | "modes" | "scores" | "howto" | "missions" | "season"
   let menuBtnRects = [], backRect = null, langRects = [];
+  let gameBackRect = null;   // oyun içi (READY/PLAY/OVER) sol-alt "‹ Geri" tuşu → mod ekranına dön (mobil)
   let mode = localStorage.getItem("flappy_mode") || "klasik";
   if (!MODES[mode]) mode = "klasik";
   let modeRects = [];
@@ -2157,6 +2158,13 @@
       if (inR(pauseResumeRect)) { Sound.sfx("click"); paused = false; return; }
       return;
     }
+    // sol-alt geri tuşu (oyun içi) → mod ekranı
+    if (gameBackRect) {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (W / rect.width);
+      const my = (e.clientY - rect.top) * (H / rect.height);
+      if (mx >= gameBackRect.x && mx <= gameBackRect.x + gameBackRect.w && my >= gameBackRect.y && my <= gameBackRect.y + gameBackRect.h) { goToModes(); return; }
+    }
     if (state === STATE.OVER) {
       // OVER'da: deri/tip kutucuğuna tıklama seçer; boş yere tıklama tekrar oynatır
       const rect = canvas.getBoundingClientRect();
@@ -2374,6 +2382,7 @@
       else if (inR(pauseResumeRect)) { paused = false; }
       return;
     }
+    if (inR(gameBackRect)) { goToModes(); return; }   // sol-alt geri tuşu → mod ekranı
     if (state === STATE.MENU) { menuClick(mx, my); return; }
     if (state === STATE.OVER) {
       // deri/tip kutucuğuna dokun → seç; boş yere dokun → tekrar oyna
@@ -4223,6 +4232,37 @@
     }
 
     if (paused && state === STATE.PLAY) drawPauseOverlay();
+
+    // Sol altta "‹ Geri" tuşu — mobilde mod ekranına dönüş (ESC yok). Duraklatınca gizli.
+    if (!paused && (state === STATE.READY || state === STATE.PLAY || state === STATE.DYING || state === STATE.OVER)) drawGameBack();
+    else gameBackRect = null;
+  }
+
+  // Oyun içi sol-alt geri tuşu (mod ekranına döner)
+  function drawGameBack() {
+    const w = 86, h = 40, x = 14, y = H - h - 14;
+    gameBackRect = { x: x, y: y, w: w, h: h };
+    ctx.save();
+    ctx.fillStyle = "rgba(10,16,22,0.55)";
+    roundRect(x, y, w, h, 12); ctx.fill();
+    ctx.lineWidth = 1.4; ctx.strokeStyle = "rgba(255,255,255,0.30)";
+    roundRect(x, y, w, h, 12); ctx.stroke();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 15px 'Segoe UI', sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(t("back"), x + w / 2, y + h / 2 + 1);
+    ctx.textBaseline = "alphabetic";
+    ctx.restore();
+  }
+
+  // Oyundan mod seçim ekranına dön (geri tuşu)
+  function goToModes() {
+    setEnvInstant("day");
+    menuScreen = "modes";
+    state = STATE.MENU;
+    paused = false;
+    holding = false;
+    Sound.sfx("click");
   }
 
   // Cam parlamalı basit buton (duraklat menüsü vb.)
@@ -5694,6 +5734,9 @@
 
   // HTML isim kutusu ve Kaydet düğmesini panele hizala/göster
   function syncNameUI() {
+    // Alt ipucu yazısı yalnızca menü/giriş ekranında görünsün (oyun içinde geri tuşuyla çakışmasın + "mod seç" yazısı anlamsız kalmasın)
+    const hintEl = document.getElementById("hint");
+    if (hintEl) hintEl.style.display = (state === STATE.MENU || state === STATE.INTRO) ? "" : "none";
     if (state === STATE.OVER) {
       const L = panelLayout();
       const iw = 150, ih = 28, bw = 66;
