@@ -230,7 +230,7 @@
     gravity: 0.26,
     jump: -6.1,
     pipeSpeed: 2.4,
-    interval: 340,     // tam ekran için daha geniş
+    interval: 430,     // borular arası yatay mesafe — nefes alacak kadar geniş
     gapGreen: 235,     // tam ekran için daha geniş boşluklar
     gapYellow: 210,
     gapRed: 190,
@@ -2063,13 +2063,13 @@
       ball2 = { x: lw - lw * 0.30, y: H / 2, vy: 0, rot: 0 };
       const MI = CONFIG.interval * 0.72;   // tighter cadence per lane
       for (let i = 0; i < 3; i++) {
-        pipes.push(makePipe(lw + 40 + i * MI));
-        pipes2.push(makePipe(lw + 40 + i * MI));
+        pipes.push(makePipe(lw + 150 + i * MI));
+        pipes2.push(makePipe(lw + 150 + i * MI));
       }
     } else {
       // İlk boru kuşun hemen önünde (ekranda görünür) başlasın — geniş ekranda uzun boş uçuş olmasın.
       // Sabit piksel mesafesi → her cihazda aynı tepki süresi (~1.7 sn). İlk boru ekran içinde kalır.
-      const startX = Math.min(ball.x + 360, W - 40);
+      const startX = Math.min(ball.x + 480, W + 120);
       spawnPipe(startX);
       spawnPipe(startX + CONFIG.interval);
       spawnPipe(startX + CONFIG.interval * 2);
